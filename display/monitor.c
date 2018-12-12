@@ -111,7 +111,7 @@ void monitor_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_colo
     int32_t x;
     for(y = y1; y <= y2; y++) {
         for(x = x1; x <= x2; x++) {
-            tft_fb[y * MONITOR_HOR_RES + x] = lv_color_to32(*color_p);
+            tft_fb[y * MONITOR_HOR_RES + x] = lv_color_to24(*color_p);
             color_p++;
         }
 
@@ -158,11 +158,11 @@ void monitor_fill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, lv_color_t col
     int32_t y;
     uint32_t color32 = lv_color_to32(color);
 
-    for(x = act_x1; x <= act_x2; x++) {
-        for(y = act_y1; y <= act_y2; y++) {
-            tft_fb[y * MONITOR_HOR_RES + x] = color32;
-        }
-    }
+	for(x = act_x1; x <= act_x2; x++) {
+		for(y = act_y1; y <= act_y2; y++) {
+			tft_fb[y * MONITOR_HOR_RES + x] = color24;
+		}
+	}
 
     sdl_refr_qry = true;
 }
@@ -177,31 +177,31 @@ void monitor_fill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, lv_color_t col
  */
 void monitor_map(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t * color_p)
 {
-    /*Return if the area is out the screen*/
-    if(x2 < 0) return;
-    if(y2 < 0) return;
-    if(x1 > MONITOR_HOR_RES - 1) return;
-    if(y1 > MONITOR_VER_RES - 1) return;
+   /*Return if the area is out the screen*/
+	if(x2 < 0) return;
+	if(y2 < 0) return;
+	if(x1 > MONITOR_HOR_RES - 1) return;
+	if(y1 > MONITOR_VER_RES - 1) return;
 
-    /*Truncate the area to the screen*/
-    int32_t act_x1 = x1 < 0 ? 0 : x1;
-    int32_t act_y1 = y1 < 0 ? 0 : y1;
-    int32_t act_x2 = x2 > MONITOR_HOR_RES - 1 ? MONITOR_HOR_RES - 1 : x2;
-    int32_t act_y2 = y2 > MONITOR_VER_RES - 1 ? MONITOR_VER_RES - 1 : y2;
+	/*Truncate the area to the screen*/
+	int32_t act_x1 = x1 < 0 ? 0 : x1;
+	int32_t act_y1 = y1 < 0 ? 0 : y1;
+	int32_t act_x2 = x2 > MONITOR_HOR_RES - 1 ? MONITOR_HOR_RES - 1 : x2;
+	int32_t act_y2 = y2 > MONITOR_VER_RES - 1 ? MONITOR_VER_RES - 1 : y2;
 
-    int32_t x;
-    int32_t y;
+	int32_t x;
+	int32_t y;
 
-    for(y = act_y1; y <= act_y2; y++) {
-        for(x = act_x1; x <= act_x2; x++) {
-            tft_fb[y * MONITOR_HOR_RES + x] = lv_color_to32(*color_p);
-            color_p++;
-        }
+	for(y = act_y1; y <= act_y2; y++) {
+		for(x = act_x1; x <= act_x2; x++) {
+			tft_fb[y * MONITOR_HOR_RES + x] = lv_color_to24(*color_p);
+			color_p++;
+		}
 
-        color_p += x2 - act_x2;
-    }
+		color_p += x2 - act_x2;
+	}
 
-    sdl_refr_qry = true;
+	sdl_refr_qry = true;
 }
 
 /**********************

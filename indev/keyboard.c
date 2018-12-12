@@ -10,6 +10,8 @@
 #if USE_KEYBOARD
 
 #include "lvgl/lv_core/lv_group.h"
+#include "jolt_gui/jolt_gui.h"
+
 /*********************
  *      DEFINES
  *********************/
@@ -62,16 +64,19 @@ bool keyboard_read(lv_indev_data_t * data)
  * It is called periodically from the SDL thread to check a key is pressed/released
  * @param event describes the event
  */
-void keyboard_handler(SDL_Event * event)
+void keyboard_handler(SDL_Event *event)
 {
     /* We only care about SDL_KEYDOWN and SDL_KEYUP events */
-    switch(event->type) {
-        case SDL_KEYDOWN:                       /*Button press*/
-            last_key = event->key.keysym.sym;   /*Save the pressed key*/
-            state = LV_INDEV_STATE_PR;          /*Save the key is pressed now*/
+    switch( event->type ){
+        case SDL_KEYDOWN:						/*Button press*/
+            last_key = event->key.keysym.sym;	/*Save the pressed key*/
+            state = LV_INDEV_STATE_PR;			/*Save the key is pressed now*/
             break;
-        case SDL_KEYUP:                         /*Button release*/
-            state = LV_INDEV_STATE_REL;         /*Save the key is released but keep the last key*/
+        case SDL_KEYUP:							/*Button release*/
+            if( event->key.keysym.sym == SDLK_LEFT ) {
+                lv_group_send_data(jolt_gui_store.group.back, LV_GROUP_KEY_ENTER);
+            }
+            state = LV_INDEV_STATE_REL;			/*Save the key is released but keep the last key*/
             break;
         default:
             break;
@@ -92,13 +97,11 @@ static uint32_t keycode_to_ascii(uint32_t sdl_key)
 {
     /*Remap some key to LV_GROUP_KEY_... to manage groups*/
     switch(sdl_key) {
-        case SDLK_RIGHT:
         case SDLK_KP_PLUS:
-            return LV_GROUP_KEY_RIGHT;
+            return LV_GROUP_KEY_NEXT;
 
-        case SDLK_LEFT:
         case SDLK_KP_MINUS:
-            return LV_GROUP_KEY_LEFT;
+            return LV_GROUP_KEY_PREV;
 
         case SDLK_UP:
             return LV_GROUP_KEY_UP;
@@ -111,14 +114,15 @@ static uint32_t keycode_to_ascii(uint32_t sdl_key)
 
 #ifdef  LV_GROUP_KEY_DEL        /*For backward compatibility*/
         case SDLK_BACKSPACE:
-            return LV_GROUP_KEY_DEL;
+        	return LV_GROUP_KEY_DEL;
 #endif
+        case SDLK_RIGHT:
         case SDLK_KP_ENTER:
         case '\r':
             return LV_GROUP_KEY_ENTER;
 
         default:
-            return sdl_key;
+        	return sdl_key;
     }
 }
 #endif
