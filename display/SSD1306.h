@@ -22,7 +22,6 @@ extern "C" {
 #include <stdbool.h>
 #include <errno.h>
 #include "../lv_drv_common.h"
-#include "lvgl/lv_misc/lv_color.h"
 
 /*********************
  *      DEFINES
@@ -126,7 +125,7 @@ typedef enum
  * @param color Pixel color
  * @param opa Pixel opacity
  */
-void ssd1306_vdb_wr(uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa);
+void ssd1306_vdb_wr(lv_disp_drv_t *disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa);
 
 /* Flush the content of the internal buffer the specific area on the display
  * This function is required only when LV_VDB_SIZE != 0 in lv_conf.h
@@ -136,7 +135,9 @@ void ssd1306_vdb_wr(uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
  * @param y2 Second y point coordinate
  * @param color_p Pointer to VDB buffer (color sized)
  */
-void ssd1306_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t * color_p);
+void ssd1306_flush(lv_disp_drv_t *disp_drv, const lv_area_t * area, lv_color_t * color_p);
+
+void ssd1306_rounder(lv_disp_drv_t *disp_drv, lv_area_t *a);
 
 /**
  * Issue a single command on SSD1306.

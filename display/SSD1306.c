@@ -16,8 +16,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lvgl/lv_core/lv_vdb.h"
-#include "lvgl/lv_core/lv_refr.h"
+#include "lvgl/src/lv_hal/lv_hal_disp.h"
+#include "lvgl/src/lv_core/lv_refr.h"
 
 /*********************
  *      DEFINES
@@ -95,7 +95,6 @@
 /**********************
  *  STATIC PROTOTYPES
  **********************/
-static void inline _rounder(lv_area_t *a);
 static int inline _load_frame_buffer(const ssd1306_t *dev, uint8_t* buf, uint8_t x1, uint8_t y1,  uint8_t x2, uint8_t y2);
 
 /**********************
@@ -119,16 +118,17 @@ static const ssd1306_t* _dev;
 #define err_control(fn) (fn)
 #endif
 
+#define LV_VDB_PX_BPP 1
 #if LV_COLOR_DEPTH != 1 || LV_VDB_PX_BPP != 1
 #error "LV_COLOR_DEPTH and LV_VDB_PX_BPP need to be set to 1"
 #endif
-#if LV_VDB_SIZE < ( 8 * LV_HOR_RES)
-#error "LV_VDB_SIZE with 8*LV_HOR_RES minimum is needed (MAX: LV_HOR_RES*LV_VER_RES)"
-#endif
+//#if LV_VDB_SIZE < ( 8 * LV_HOR_RES)
+//#error "LV_VDB_SIZE with 8*LV_HOR_RES minimum is needed (MAX: LV_HOR_RES*LV_VER_RES)"
+//#endif
 /**********************
  *   GLOBAL FUNCTIONS
  **********************/
-void ssd1306_vdb_wr(uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa)
+void ssd1306_vdb_wr(lv_disp_drv_t *disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa)
 {
     buf += buf_w * (y >> 3) + x;
     if(color.full)
@@ -141,23 +141,23 @@ void ssd1306_vdb_wr(uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
     }
 }
 
-void ssd1306_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t * color_p)
+void ssd1306_flush(lv_disp_drv_t *disp_drv, const lv_area_t * area, lv_color_t * color_p)
 {
     /*Return if the area is out the screen*/
-    if (x2 < 0 || y2 < 0 || x1 > LV_HOR_RES - 1 || y1 > LV_VER_RES - 1)
+    if (area->x2 < 0 || area->y2 < 0 || area->x1 > LV_HOR_RES - 1 || area->y1 > LV_VER_RES - 1)
     {
-        lv_flush_ready();
+        lv_disp_flush_ready(disp_drv);
         return;
     }
     /*Return if the screen is uninitialized*/
     if(!_dev)
     {
-        lv_flush_ready();
+        lv_disp_flush_ready(disp_drv);
         return;
     }
 
-    _load_frame_buffer(_dev, (uint8_t*)color_p, x1, y1, x2, y2);
-    lv_flush_ready();
+    _load_frame_buffer(_dev, (uint8_t*)color_p, area->x1, area->y1, area->x2, area->y2);
+    lv_disp_flush_ready(disp_drv);
 }
 
 /* Issue a command to SSD1306 device
@@ -234,10 +234,6 @@ int ssd1306_init(const ssd1306_t *dev)
         debug("Unsupported screen witdh");
         return -ENOTSUP;
     }
-
-    //We send 8 pixel at once (page coordinate ). If VDB is not set correctly,
-    //we need round the y coordinate
-    lv_refr_set_round_cb(_rounder);
 
     switch (dev->protocol)
     {
@@ -554,8 +550,8 @@ int ssd1306_start_scroll_hori(const ssd1306_t *dev, bool way, uint8_t start, uin
     return -EIO;
 }
 
-int ssd1306_start_scroll_hori_vert(const ssd1306_t *dev, bool way, uint8_t start, uint8_t stop, uint8_t dy,
-    ssd1306_scroll_t frame)
+int ssd1306_start_scroll_hori_vert(const ssd1306_t *dev, bool way, 
+        uint8_t start, uint8_t stop, uint8_t dy, ssd1306_scroll_t frame)
 {
     if (dev->screen == SH1106_SCREEN)
     {
@@ -599,7 +595,7 @@ int ssd1306_start_scroll_hori_vert(const ssd1306_t *dev, bool way, uint8_t start
 /**********************
  *   STATIC FUNCTIONS
  **********************/
-static void inline _rounder(lv_area_t *a)
+void ssd1306_rounder(lv_disp_drv_t *disp_drv, lv_area_t *a)
 {
     /*Make the area bigger in y*/
     a->y1 = a->y1 & ~(0x7);
